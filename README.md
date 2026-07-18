@@ -100,7 +100,7 @@ on your `PATH`.
 ### 2. Install leonCAST
 
 ```bash
-git clone <this repo>
+git clone https://github.com/weareleon/leoncast
 cd leoncast
 
 python3 -m venv .venv
@@ -204,11 +204,6 @@ there's no shared/global library. Click into a station from the dashboard
 to see and manage its own track list and jingle rotation; nothing is
 visible across stations.
 
-## Theme
-
-Black/green, matches the leonCAST logo. Logo is pulled directly from
-`https://files.catbox.moe/0jxcd1.png` in the dashboard HTML — swap that URL
-in `static/index.html` if you move it somewhere more permanent later.
 
 ## Security notes before you deploy
 
