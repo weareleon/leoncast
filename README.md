@@ -1,4 +1,4 @@
-# ![leonCAST](https://files.catbox.moe/i6ndqe.png](https://leoncast.lovable.app/__l5e/assets-v1/b593ddae-4ecb-4b3d-a265-0b2da8f2b719/logo.png)
+# ![leonCAST](https://leoncast.lovable.app/__l5e/assets-v1/b593ddae-4ecb-4b3d-a265-0b2da8f2b719/logo.png)
 
 A lightweight, self-hosted alternative to AzuraCast. Multi-station internet
 radio with BPM-aware crossfading, uploads, playlists, scheduling, jingles,
