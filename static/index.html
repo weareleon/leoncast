@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>leonCAST</title>
+<style>
+  :root{
+    --accent: #39ff6a;
+    --accent-dim: #1f7a3c;
+    --bg-0: #05070a;
+    --bg-1: #0c1210;
+    --acrylic: rgba(10, 18, 14, 0.78);
+    --stroke: rgba(57,255,106,0.12);
+    --stroke-strong: rgba(57,255,106,0.28);
+    --text-0: #eafff0;
+    --text-1: #9fc9ab;
+    --text-2: #5c7d64;
+    --good: #39ff6a;
+    --bad: #ff5c5c;
+    --radius: 8px;
+    --font-ui: "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  }
+  *{ box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(57,255,106,0.09), transparent 40%),
+      radial-gradient(circle at 85% 100%, rgba(57,255,106,0.05), transparent 45%),
+      var(--bg-0);
+    color: var(--text-0);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+  }
+  .app{ display:flex; min-height:100vh; }
+  a{ color:inherit; }
+
+  .rail{
+    width: 220px; flex-shrink:0;
+    background: var(--acrylic);
+    backdrop-filter: blur(30px) saturate(150%);
+    border-right: 1px solid var(--stroke);
+    padding: 20px 12px;
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; padding: 6px 10px 22px 10px; }
+  .brand .brand-mark{ flex-shrink:0; filter: drop-shadow(0 0 6px rgba(57,255,106,0.18)); }
+  .brand span{ font-weight:600; font-size:16px; letter-spacing:0.2px; }
+  .brand small{ display:block; color:var(--text-2); font-size:11px; font-weight:400; }
+
+  .nav-item{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 12px; border-radius: var(--radius);
+    color: var(--text-1); font-size:13.5px; cursor:pointer;
+    border: 1px solid transparent;
+    transition: background .12s ease, color .12s ease;
+  }
+  .nav-item:hover{ background: rgba(57,255,106,0.06); color: var(--text-0); }
+  .nav-item.active{ background: rgba(57,255,106,0.10); border-color: rgba(57,255,106,0.25); color: var(--text-0); }
+  .nav-item .ico{ width:16px; text-align:center; opacity:0.85; }
+
+  .rail-bottom{ margin-top:auto; padding-top:12px; border-top:1px solid var(--stroke); }
+  .user-chip{ display:flex; align-items:center; justify-content:space-between; padding:6px 10px; font-size:12.5px; color:var(--text-1); }
+  .user-chip b{ color: var(--text-0); }
+  .logout-btn{ background:none; border:none; color:var(--text-2); cursor:pointer; font-size:11.5px; text-decoration:underline; }
+  .logout-btn:hover{ color: var(--bad); }
+
+  .main{ flex:1; padding: 28px 34px; max-width: 1200px; }
+  .page-header{ margin-bottom: 22px; display:flex; align-items:center; justify-content:space-between; }
+  .page-header h1{ margin:0 0 4px 0; font-size:22px; font-weight:600; letter-spacing:-0.2px; }
+  .page-header p{ margin:0; color: var(--text-1); font-size:13.5px; }
+  .back-link{ font-size:12.5px; color: var(--text-1); cursor:pointer; margin-bottom:10px; display:inline-block; }
+  .back-link:hover{ color: var(--accent); }
+
+  .toolbar{ display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+  .btn{
+    font-family: var(--font-ui);
+    background: rgba(57,255,106,0.06);
+    border: 1px solid var(--stroke-strong);
+    color: var(--text-0);
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    font-size: 13px; cursor:pointer;
+    transition: background .12s ease, transform .06s ease;
+  }
+  .btn:hover{ background: rgba(57,255,106,0.12); }
+  .btn:active{ transform: scale(0.98); }
+  .btn.primary{ background: var(--accent); color: #04140a; border-color: var(--accent); font-weight:600; }
+  .btn.primary:hover{ background:#5cff89; }
+  .btn.danger{ color: var(--bad); border-color: rgba(255,92,92,0.35); background: rgba(255,92,92,0.08); }
+  .btn:disabled{ opacity:0.4; cursor:not-allowed; }
+
+  .grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+
+  .card{
+    background: var(--acrylic);
+    backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid var(--stroke);
+    border-radius: 10px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .15s ease;
+    cursor: pointer;
+  }
+  .card:hover{ border-color: var(--stroke-strong); }
+  .card::before{
+    content:"";
+    position:absolute; inset:0 0 auto 0; height:2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity:0; transition: opacity .2s ease;
+  }
+  .card.live::before{ opacity: 0.8; }
+
+  .card-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+  .card-top h3{ margin:0 0 2px 0; font-size:15.5px; font-weight:600; }
+  .card-top .mount{ color: var(--text-2); font-size:11.5px; font-family: "Cascadia Code", monospace; }
+
+  .status-pill{
+    display:flex; align-items:center; gap:6px;
+    font-size:11px; font-weight:600; letter-spacing:0.3px; text-transform:uppercase;
+    padding: 3px 9px; border-radius: 20px;
+  }
+  .status-pill.on{ background: rgba(57,255,106,0.14); color: var(--good); }
+  .status-pill.off{ background: rgba(255,255,255,0.04); color: var(--text-2); }
+  .status-pill .blip{ width:6px; height:6px; border-radius:50%; background: currentColor; }
+  .status-pill.on .blip{ animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.35; } }
+
+  .now-playing{
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--stroke);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    min-height: 46px;
+  }
+  .now-playing .label{ font-size:10.5px; color: var(--text-2); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px; }
+  .now-playing .track{ font-size:13.5px; color: var(--text-0); }
+  .now-playing .track .artist{ color: var(--text-1); }
+  .now-playing .empty{ color: var(--text-2); font-size:13px; font-style:italic; }
+
+  .card-actions{ display:flex; gap:8px; }
+  .card-actions .btn{ flex:1; padding: 7px 10px; font-size:12.5px; text-align:center; }
+
+  .empty-state{ text-align:center; padding: 60px 20px; color: var(--text-2); }
+  .empty-state h3{ color: var(--text-1); font-weight:600; margin-bottom:6px; }
+
+  .section{ margin-bottom:28px; }
+  .section h2{ font-size:15px; font-weight:600; margin:0 0 10px 0; color: var(--text-0); }
+  table{ width:100%; border-collapse:collapse; background: var(--acrylic); border:1px solid var(--stroke); border-radius:8px; overflow:hidden; }
+  th,td{ text-align:left; padding:9px 12px; font-size:13px; border-bottom:1px solid var(--stroke); }
+  th{ color: var(--text-2); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.4px; }
+  tr:last-child td{ border-bottom:none; }
+  td.actions{ text-align:right; white-space:nowrap; }
+  td.actions button{ background:none; border:none; color:var(--text-2); cursor:pointer; font-size:12px; margin-left:8px; }
+  td.actions button:hover{ color: var(--bad); }
+  td.actions button.play:hover{ color: var(--accent); }
+  .upload-drop{
+    border: 1.5px dashed var(--stroke-strong); border-radius:8px; padding:16px;
+    text-align:center; color:var(--text-1); font-size:12.5px; margin-bottom:8px;
+  }
+  .upload-drop:hover{ border-color: var(--accent); color: var(--text-0); }
+  .upload-drop.drag{ border-color: var(--accent); background: rgba(57,255,106,0.06); color: var(--text-0); }
+  .upload-drop-actions{ display:flex; gap:8px; justify-content:center; margin-top:10px; }
+  .upload-drop-actions .btn{ padding:6px 12px; font-size:12px; }
+  .upload-progress{ font-size:12px; color: var(--text-1); margin-bottom:12px; }
+
+  .auth-wrap{
+    min-height:100vh; width:100%; display:flex; align-items:center; justify-content:center;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(57,255,106,0.10), transparent 45%),
+      radial-gradient(circle at 80% 80%, rgba(57,255,106,0.06), transparent 45%),
+      var(--bg-0);
+  }
+  .auth-card{
+    width: 380px; max-width: 92vw;
+    background: var(--acrylic);
+    backdrop-filter: blur(30px) saturate(150%);
+    border: 1px solid var(--stroke-strong);
+    border-radius: 12px;
+    padding: 32px 28px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  }
+  .auth-logo{ display:flex; flex-direction:column; align-items:center; gap:10px; margin-bottom:22px; }
+  .auth-logo .brand-mark{ filter: drop-shadow(0 0 20px rgba(57,255,106,0.3)); }
+  .auth-logo h1{ margin:0; font-size:19px; font-weight:700; letter-spacing:0.3px; }
+  .auth-logo p{ margin:2px 0 0 0; font-size:12px; color: var(--text-2); }
+  .auth-card .field{ margin-bottom:14px; }
+  .auth-card label{ display:block; font-size:12px; color: var(--text-1); margin-bottom:5px; }
+  .auth-card input{
+    width:100%; background: rgba(0,0,0,0.35); border:1px solid var(--stroke-strong);
+    border-radius:6px; padding:9px 11px; color: var(--text-0); font-size:13.5px;
+    font-family: var(--font-ui);
+  }
+  .auth-card input:focus{ outline:none; border-color: var(--accent); }
+  .auth-card .btn.primary{ width:100%; padding:10px; font-size:13.5px; margin-top:6px; }
+  .auth-error{ color: var(--bad); font-size:12.5px; margin-top:10px; text-align:center; min-height:16px; }
+  .auth-hint{ color: var(--text-2); font-size:11.5px; margin-top:16px; text-align:center; line-height:1.5; }
+
+  .overlay{
+    position:fixed; inset:0; background: rgba(2,4,3,0.6);
+    backdrop-filter: blur(4px);
+    display:none; align-items:center; justify-content:center; z-index:50;
+  }
+  .overlay.show{ display:flex; }
+  .modal{
+    width: 420px; max-width: 92vw;
+    background: #0a120e;
+    border: 1px solid var(--stroke-strong);
+    border-radius: 10px;
+    padding: 22px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+  }
+  .modal h2{ margin:0 0 16px 0; font-size:16px; }
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-size:12px; color: var(--text-1); margin-bottom:5px; }
+  .field input{
+    width:100%; background: rgba(0,0,0,0.3); border:1px solid var(--stroke-strong);
+    border-radius:6px; padding:8px 10px; color: var(--text-0); font-size:13px;
+    font-family: var(--font-ui);
+  }
+  .field input:focus{ outline:none; border-color: var(--accent); }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
+  .checkbox-field{ display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .checkbox-field label{ margin:0; font-size:13px; color: var(--text-0); }
+
+  ::-webkit-scrollbar{ width:10px; }
+  ::-webkit-scrollbar-thumb{ background: rgba(57,255,106,0.15); border-radius:8px; }
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+
+<div id="authScreen" class="auth-wrap hidden">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <svg class="brand-mark" viewBox="0 0 64 64" width="56" height="56" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="leonCAST">
+        <rect x="1.5" y="1.5" width="61" height="61" rx="15" fill="#0a140f" stroke="rgba(57,255,106,0.35)" stroke-width="1.5"/>
+        <path d="M17 21 C 34 21, 43 30, 43 43" fill="none" stroke="#39ff6a" stroke-width="3.4" stroke-linecap="round" opacity="0.35"/>
+        <path d="M17 30 C 29 30, 35 36, 35 43" fill="none" stroke="#39ff6a" stroke-width="3.4" stroke-linecap="round" opacity="0.65"/>
+        <circle cx="18.5" cy="43" r="5" fill="#39ff6a"/>
+      </svg>
+      <h1 id="authTitle">leonCAST</h1>
+      <p id="authSubtitle">station control</p>
+    </div>
+
+    <div id="setupForm">
+      <div class="field"><label>Admin username</label><input id="su_username" placeholder="leon"></div>
+      <div class="field"><label>Password</label><input id="su_password" type="password" placeholder="8+ characters"></div>
+      <button class="btn primary" onclick="submitSetup()">Create admin account</button>
+      <div class="auth-hint">This runs once, on first startup. After this, only the admin can add more accounts.</div>
+    </div>
+
+    <div id="loginForm" class="hidden">
+      <div class="field"><label>Username</label><input id="li_username" placeholder="username"></div>
+      <div class="field"><label>Password</label><input id="li_password" type="password" placeholder="password"></div>
+      <button class="btn primary" onclick="submitLogin()">Log in</button>
+    </div>
+
+    <div id="authError" class="auth-error"></div>
+  </div>
+</div>
+
+<div id="appRoot" class="app hidden">
+  <div class="rail">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 64 64" width="30" height="30" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="leonCAST">
+        <rect x="1.5" y="1.5" width="61" height="61" rx="15" fill="#0a140f" stroke="rgba(57,255,106,0.35)" stroke-width="1.5"/>
+        <path d="M17 21 C 34 21, 43 30, 43 43" fill="none" stroke="#39ff6a" stroke-width="3.4" stroke-linecap="round" opacity="0.35"/>
+        <path d="M17 30 C 29 30, 35 36, 35 43" fill="none" stroke="#39ff6a" stroke-width="3.4" stroke-linecap="round" opacity="0.65"/>
+        <circle cx="18.5" cy="43" r="5" fill="#39ff6a"/>
+      </svg>
+      <div>
+        <span>leonCAST</span>
+        <small>station control</small>
+      </div>
+    </div>
+    <div class="nav-item active" onclick="showStations()"><span class="ico">&#9679;</span> Stations</div>
+    <div class="nav-item" id="navUsers" onclick="showUsers()"><span class="ico">&#128100;</span> Users</div>
+    <div class="nav-item" id="navSettings" onclick="showSettings()"><span class="ico">&#9881;</span> Settings</div>
+
+    <div class="rail-bottom">
+      <div class="user-chip"><span>Signed in as <b id="currentUsername">-</b></span></div>
+      <div class="user-chip">
+        <span id="currentRole"></span>
+        <button class="logout-btn" onclick="logout()">Log out</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <div id="viewStations">
+      <div class="page-header">
+        <div>
+          <h1>Stations</h1>
+          <p id="subhead">Loading...</p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <button class="btn primary" onclick="openCreateModal()">+ New station</button>
+        <button class="btn" onclick="refresh()">Refresh</button>
+      </div>
+      <div id="grid" class="grid"></div>
+    </div>
+
+    <div id="viewStationDetail" class="hidden">
+      <span class="back-link" onclick="showStations()">&larr; Back to stations</span>
+      <div class="page-header">
+        <div>
+          <h1 id="detailStationName">Station</h1>
+          <p id="detailStationMount"></p>
+        </div>
+        <div class="status-pill" id="detailStatusPill"><span class="blip"></span>-</div>
+      </div>
+
+      <div class="section">
+        <h2>Public listen page</h2>
+        <p style="color:var(--text-1); font-size:12.5px; margin:0 0 12px 0;">
+          Anyone with this link can listen — no account needed. Customize the background shown behind the player.
+        </p>
+        <div class="field" style="max-width:480px;">
+          <label>Public link</label>
+          <div style="display:flex; gap:8px;">
+            <input id="publicLinkField" readonly style="flex:1;">
+            <button class="btn" onclick="copyPublicLink()">Copy</button>
+            <button class="btn" onclick="window.open(document.getElementById('publicLinkField').value, '_blank')">Open</button>
+          </div>
+        </div>
+        <div class="field" style="max-width:480px;">
+          <label>Background image URL (optional)</label>
+          <input id="settingsBgUrl" placeholder="https://example.com/background.jpg">
+        </div>
+        <div class="field" style="max-width:200px;">
+          <label>Background color</label>
+          <input id="settingsBgColor" type="color" style="padding:2px; height:38px;">
+        </div>
+        <div class="field" style="max-width:480px;">
+          <label>Public stream URL override (optional — only if Icecast isn't reachable at this server's hostname)</label>
+          <input id="settingsStreamUrl" placeholder="https://stream.example.com:8000/mount">
+        </div>
+        <button class="btn primary" onclick="saveStationSettings()">Save settings</button>
+        <span id="settingsSavedHint" style="color:var(--text-2); font-size:12px; margin-left:10px;"></span>
+      </div>
+
+      <div class="section">
+        <h2>Track library</h2>
+        <div class="upload-drop" id="trackDrop">
+          Drag & drop audio files or a whole folder here — tracks queue themselves automatically.
+          <div class="upload-drop-actions">
+            <button type="button" class="btn" onclick="document.getElementById('trackFileInput').click()">Choose files</button>
+            <button type="button" class="btn" onclick="document.getElementById('trackFolderInput').click()">Choose folder</button>
+          </div>
+        </div>
+        <input type="file" id="trackFileInput" accept="audio/*" class="hidden" multiple onchange="uploadTracks(event)">
+        <input type="file" id="trackFolderInput" class="hidden" multiple webkitdirectory directory onchange="uploadTracks(event)">
+        <div id="trackUploadProgress" class="upload-progress hidden"></div>
+        <table>
+          <thead><tr><th>Title</th><th>Artist</th><th>Duration</th><th></th></tr></thead>
+          <tbody id="trackTableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>Jingles</h2>
+        <div class="upload-drop" id="jingleDrop">
+          Drag & drop jingle files here, or
+          <div class="upload-drop-actions">
+            <button type="button" class="btn" onclick="document.getElementById('jingleFileInput').click()">Choose files</button>
+          </div>
+        </div>
+        <input type="file" id="jingleFileInput" accept="audio/*" class="hidden" multiple onchange="uploadJingles(event)">
+        <div id="jingleUploadProgress" class="upload-progress hidden"></div>
+        <div class="field" style="max-width:280px; margin-bottom:14px;">
+          <label>Play a jingle every N tracks (0 = off)</label>
+          <input id="jingleIntervalInput" type="number" min="0" onchange="updateJingleInterval()">
+        </div>
+        <table>
+          <thead><tr><th>Title</th><th>Duration</th><th></th></tr></thead>
+          <tbody id="jingleTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="viewUsers" class="hidden">
+      <div class="page-header">
+        <div>
+          <h1>Users</h1>
+          <p>Only an admin can add accounts. There is no public signup.</p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <button class="btn primary" onclick="openUserModal()">+ New user</button>
+      </div>
+      <table>
+        <thead><tr><th>Username</th><th>Role</th><th></th></tr></thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+    </div>
+
+    <div id="viewSettings" class="hidden">
+      <div class="page-header">
+        <div>
+          <h1>Settings</h1>
+          <p>Networking and Icecast configuration shared by every station.</p>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Public networking</h2>
+        <p style="color:var(--text-1); font-size:12.5px; margin:0 0 12px 0;">
+          The hostname or domain listeners use to reach this server. Used to build public listen-page links
+          and default stream URLs so you don't have to set it per station.
+        </p>
+        <div class="field" style="max-width:420px;">
+          <label>Public hostname / domain</label>
+          <input id="gs_publicHostname" placeholder="radio.example.com (leave blank to guess from the browser)">
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Icecast connection</h2>
+        <p style="color:var(--text-1); font-size:12.5px; margin:0 0 12px 0;">
+          Where leonCAST's streaming engine connects to push audio, and the defaults used when creating new stations.
+        </p>
+        <div class="field" style="max-width:420px;">
+          <label>Icecast internal host</label>
+          <input id="gs_icecastHost" placeholder="localhost">
+        </div>
+        <div class="field" style="max-width:200px;">
+          <label>Icecast port</label>
+          <input id="gs_icecastPort" placeholder="8000">
+        </div>
+        <div class="field" style="max-width:420px;">
+          <label>Icecast admin password</label>
+          <input id="gs_icecastAdminPass" type="text">
+        </div>
+        <div class="field" style="max-width:420px;">
+          <label>Default source password (used for icecast.xml; each station can still set its own)</label>
+          <input id="gs_icecastSourcePass" type="text">
+        </div>
+      </div>
+
+      <button class="btn primary" onclick="saveGlobalSettings()">Save settings</button>
+      <button class="btn" onclick="regenerateIcecastConfig()">Regenerate icecast.xml</button>
+      <span id="globalSettingsHint" style="color:var(--text-2); font-size:12px; margin-left:10px;"></span>
+
+      <p style="color:var(--text-2); font-size:12px; margin-top:16px;">
+        Regenerating writes a fresh icecast.xml from these settings and every station's mount — Icecast itself
+        still needs a reload or restart to pick it up.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>New station</h2>
+    <div class="field"><label>Station ID (slug)</label><input id="f_id" placeholder="chillmix"></div>
+    <div class="field"><label>Display name</label><input id="f_name" placeholder="Leon's Chill Mix"></div>
+    <div class="field"><label>Icecast mount</label><input id="f_mount" placeholder="/chillmix"></div>
+    <div class="field"><label>Icecast source password</label><input id="f_pass" placeholder="••••••••" type="text"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeCreateModal()">Cancel</button>
+      <button class="btn primary" onclick="submitCreate()">Create station</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="userOverlay">
+  <div class="modal">
+    <h2>New user</h2>
+    <div class="field"><label>Username</label><input id="u_username" placeholder="dj"></div>
+    <div class="field"><label>Password</label><input id="u_password" type="password" placeholder="8+ characters"></div>
+    <div class="checkbox-field">
+      <input type="checkbox" id="u_isadmin">
+      <label for="u_isadmin">Grant admin (can manage other accounts)</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeUserModal()">Cancel</button>
+      <button class="btn primary" onclick="submitCreateUser()">Create user</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "/api";
+let TOKEN = localStorage.getItem("leoncast_token") || null;
+let CURRENT_USER = null;
+let currentStationId = null;
+
+async function apiFetch(path, opts = {}){
+  opts.headers = opts.headers || {};
+  if(TOKEN) opts.headers["Authorization"] = `Bearer ${TOKEN}`;
+  const res = await fetch(`${API}${path}`, opts);
+  if(res.status === 401){
+    TOKEN = null;
+    localStorage.removeItem("leoncast_token");
+    showAuthScreen(false);
+    throw new Error("Not authenticated");
+  }
+  return res;
+}
+
+async function bootstrap(){
+  const statusRes = await fetch(`${API}/auth/status`);
+  const status = await statusRes.json();
+
+  if(status.needs_setup){ showAuthScreen(true); return; }
+  if(!TOKEN){ showAuthScreen(false); return; }
+
+  try{
+    const meRes = await apiFetch("/auth/me");
+    if(!meRes.ok) throw new Error("bad token");
+    CURRENT_USER = await meRes.json();
+    showApp();
+  }catch(e){
+    showAuthScreen(false);
+  }
+}
+
+function showAuthScreen(needsSetup){
+  document.getElementById("authScreen").classList.remove("hidden");
+  document.getElementById("appRoot").classList.add("hidden");
+  document.getElementById("setupForm").classList.toggle("hidden", !needsSetup);
+  document.getElementById("loginForm").classList.toggle("hidden", !!needsSetup);
+  document.getElementById("authSubtitle").textContent = needsSetup
+    ? "first run — create the admin account"
+    : "sign in to continue";
+}
+
+function showApp(){
+  document.getElementById("authScreen").classList.add("hidden");
+  document.getElementById("appRoot").classList.remove("hidden");
+  document.getElementById("currentUsername").textContent = CURRENT_USER.username;
+  document.getElementById("currentRole").textContent = CURRENT_USER.is_admin ? "Admin" : "Member";
+  document.getElementById("navUsers").classList.toggle("hidden", !CURRENT_USER.is_admin);
+  document.getElementById("navSettings").classList.toggle("hidden", !CURRENT_USER.is_admin);
+  showStations();
+}
+
+async function submitSetup(){
+  const username = document.getElementById("su_username").value.trim();
+  const password = document.getElementById("su_password").value;
+  const errEl = document.getElementById("authError");
+  errEl.textContent = "";
+  try{
+    const res = await fetch(`${API}/auth/setup`, {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.detail || "Setup failed");
+    TOKEN = data.token;
+    localStorage.setItem("leoncast_token", TOKEN);
+    CURRENT_USER = { username: data.username, is_admin: data.is_admin };
+    showApp();
+  }catch(e){ errEl.textContent = e.message; }
+}
+
+async function submitLogin(){
+  const username = document.getElementById("li_username").value.trim();
+  const password = document.getElementById("li_password").value;
+  const errEl = document.getElementById("authError");
+  errEl.textContent = "";
+  try{
+    const res = await fetch(`${API}/auth/login`, {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.detail || "Login failed");
+    TOKEN = data.token;
+    localStorage.setItem("leoncast_token", TOKEN);
+    CURRENT_USER = { username: data.username, is_admin: data.is_admin };
+    showApp();
+  }catch(e){ errEl.textContent = e.message; }
+}
+
+async function logout(){
+  try{ await apiFetch("/auth/logout", { method: "POST" }); }catch(e){}
+  TOKEN = null;
+  localStorage.removeItem("leoncast_token");
+  location.reload();
+}
+
+function setActiveNav(el){
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  if(el) el.classList.add("active");
+}
+
+function showStations(){
+  document.getElementById("viewStations").classList.remove("hidden");
+  document.getElementById("viewStationDetail").classList.add("hidden");
+  document.getElementById("viewUsers").classList.add("hidden");
+  document.getElementById("viewSettings").classList.add("hidden");
+  setActiveNav(document.querySelectorAll(".nav-item")[0]);
+  refresh();
+}
+
+function showUsers(){
+  document.getElementById("viewStations").classList.add("hidden");
+  document.getElementById("viewStationDetail").classList.add("hidden");
+  document.getElementById("viewUsers").classList.remove("hidden");
+  document.getElementById("viewSettings").classList.add("hidden");
+  setActiveNav(document.getElementById("navUsers"));
+  refreshUsers();
+}
+
+function showSettings(){
+  document.getElementById("viewStations").classList.add("hidden");
+  document.getElementById("viewStationDetail").classList.add("hidden");
+  document.getElementById("viewUsers").classList.add("hidden");
+  document.getElementById("viewSettings").classList.remove("hidden");
+  setActiveNav(document.getElementById("navSettings"));
+  loadGlobalSettings();
+}
+
+async function refresh(){
+  const res = await apiFetch("/stations");
+  const stations = await res.json();
+  const grid = document.getElementById("grid");
+  const sub = document.getElementById("subhead");
+
+  if(!stations.length){
+    sub.textContent = "No stations yet.";
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <h3>No stations running</h3>
+      <p>Create your first station to start streaming.</p>
+    </div>`;
+    return;
+  }
+
+  sub.textContent = `${stations.length} station${stations.length===1?"":"s"} configured · ${stations.filter(s=>s.running).length} live`;
+  grid.innerHTML = stations.map(s => cardHtml(s)).join("");
+}
+
+function cardHtml(s){
+  const np = s.now_playing;
+  const nowPlayingHtml = np
+    ? `<div class="track">${escapeHtml(np.title || "Untitled")} <span class="artist">— ${escapeHtml(np.artist || "Unknown")}</span></div>`
+    : `<div class="empty">Nothing queued</div>`;
+
+  return `
+  <div class="card ${s.running ? 'live' : ''}" onclick="openStation(event, '${s.station_id}')">
+    <div class="card-top">
+      <div>
+        <h3>${escapeHtml(s.name)}</h3>
+        <div class="mount">${escapeHtml(s.mount)}</div>
+      </div>
+      <div class="status-pill ${s.running ? 'on' : 'off'}">
+        <span class="blip"></span>${s.running ? 'On air' : 'Offline'}
+      </div>
+    </div>
+    <div class="now-playing">
+      <div class="label">Now playing</div>
+      ${nowPlayingHtml}
+    </div>
+    <div class="card-actions">
+      ${s.running
+        ? `<button class="btn" onclick="event.stopPropagation(); stopStation('${s.station_id}')">Stop</button>`
+        : `<button class="btn primary" onclick="event.stopPropagation(); startStation('${s.station_id}')">Go live</button>`}
+      <button class="btn danger" onclick="event.stopPropagation(); deleteStation('${s.station_id}')">Delete</button>
+    </div>
+  </div>`;
+}
+
+function escapeHtml(str){
+  const d = document.createElement("div");
+  d.innerText = str == null ? "" : str;
+  return d.innerHTML;
+}
+
+async function startStation(id){ await apiFetch(`/stations/${id}/start`, { method: "POST" }); refresh(); }
+async function stopStation(id){ await apiFetch(`/stations/${id}/stop`, { method: "POST" }); refresh(); }
+async function deleteStation(id){
+  if(!confirm(`Delete station "${id}"? This cannot be undone.`)) return;
+  await apiFetch(`/stations/${id}`, { method: "DELETE" });
+  refresh();
+}
+
+function openCreateModal(){ document.getElementById("overlay").classList.add("show"); }
+function closeCreateModal(){ document.getElementById("overlay").classList.remove("show"); }
+
+async function submitCreate(){
+  const body = {
+    station_id: document.getElementById("f_id").value.trim(),
+    name: document.getElementById("f_name").value.trim(),
+    icecast_mount: document.getElementById("f_mount").value.trim(),
+    icecast_source_password: document.getElementById("f_pass").value.trim(),
+  };
+  if(!body.station_id || !body.name || !body.icecast_mount || !body.icecast_source_password){
+    alert("Fill in all fields."); return;
+  }
+  const res = await apiFetch("/stations", {
+    method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)
+  });
+  if(!res.ok){
+    const err = await res.json();
+    alert(err.detail || "Failed to create station");
+    return;
+  }
+  closeCreateModal();
+  refresh();
+}
+
+function openStation(evt, stationId){
+  currentStationId = stationId;
+  document.getElementById("viewStations").classList.add("hidden");
+  document.getElementById("viewStationDetail").classList.remove("hidden");
+  document.getElementById("viewSettings").classList.add("hidden");
+  loadStationDetail();
+  loadStationSettings();
+}
+
+async function loadStationDetail(){
+  const stations = await (await apiFetch("/stations")).json();
+  const s = stations.find(x => x.station_id === currentStationId);
+  if(s){
+    document.getElementById("detailStationName").textContent = s.name;
+    document.getElementById("detailStationMount").textContent = s.mount;
+    const pill = document.getElementById("detailStatusPill");
+    pill.className = `status-pill ${s.running ? 'on' : 'off'}`;
+    pill.innerHTML = `<span class="blip"></span>${s.running ? 'On air' : 'Offline'}`;
+  }
+
+  document.getElementById("publicLinkField").value = `${location.origin}/listen/${currentStationId}`;
+
+  const tracks = await (await apiFetch(`/stations/${currentStationId}/tracks`)).json();
+  document.getElementById("trackTableBody").innerHTML = tracks.map(t => `
+    <tr>
+      <td>${escapeHtml(t.title || "Untitled")}</td>
+      <td>${escapeHtml(t.artist || "")}</td>
+      <td>${t.duration ? t.duration.toFixed(1) + "s" : "—"}</td>
+      <td class="actions"><button onclick="deleteTrack(${t.id})">Remove</button></td>
+    </tr>
+  `).join("") || `<tr><td colspan="4" style="color:var(--text-2)">No tracks uploaded to this station's library yet.</td></tr>`;
+
+  const jingles = await (await apiFetch(`/stations/${currentStationId}/jingles`)).json();
+  document.getElementById("jingleTableBody").innerHTML = jingles.map(j => `
+    <tr>
+      <td>${escapeHtml(j.title || "Untitled")}</td>
+      <td>${j.duration ? j.duration.toFixed(1) + "s" : "—"}</td>
+      <td class="actions">
+        <button class="play" onclick="playJingleNow(${j.id})">Play now</button>
+        <button onclick="deleteJingle(${j.id})">Remove</button>
+      </td>
+    </tr>
+  `).join("") || `<tr><td colspan="3" style="color:var(--text-2)">No jingles uploaded to this station yet.</td></tr>`;
+}
+
+function copyPublicLink(){
+  const field = document.getElementById("publicLinkField");
+  field.select();
+  navigator.clipboard?.writeText(field.value).catch(() => {});
+}
+
+async function loadStationSettings(){
+  try{
+    const res = await fetch(`${API}/public/stations/${currentStationId}`);
+    if(!res.ok) return;
+    const data = await res.json();
+    document.getElementById("settingsBgUrl").value = data.background_url || "";
+    document.getElementById("settingsBgColor").value = data.background_color || "#05070a";
+  }catch(e){ /* non-fatal */ }
+}
+
+async function saveStationSettings(){
+  const body = {
+    background_url: document.getElementById("settingsBgUrl").value.trim(),
+    background_color: document.getElementById("settingsBgColor").value || "#05070a",
+    public_stream_url: document.getElementById("settingsStreamUrl").value.trim(),
+  };
+  const res = await apiFetch(`/stations/${currentStationId}/settings`, {
+    method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)
+  });
+  const hint = document.getElementById("settingsSavedHint");
+  hint.textContent = res.ok ? "Saved." : "Failed to save.";
+  setTimeout(() => hint.textContent = "", 2500);
+}
+
+const AUDIO_EXT_RE = /\.(mp3|wav|flac|ogg|m4a|aac|wma|opus)$/i;
+
+function filterAudioFiles(fileList){
+  return Array.from(fileList).filter(f => AUDIO_EXT_RE.test(f.name));
+}
+
+async function uploadTracks(evt){
+  const files = filterAudioFiles(evt.target.files);
+  evt.target.value = "";
+  if(!files.length) return;
+  await uploadBatch(files, `/stations/${currentStationId}/upload-batch`, "trackUploadProgress");
+  loadStationDetail();
+}
+
+async function uploadJingles(evt){
+  const files = filterAudioFiles(evt.target.files);
+  evt.target.value = "";
+  if(!files.length) return;
+  // Jingles use the single-file endpoint; upload sequentially so each gets its own row.
+  const el = document.getElementById("jingleUploadProgress");
+  el.classList.remove("hidden");
+  for(let i = 0; i < files.length; i++){
+    el.textContent = `Uploading ${i + 1} of ${files.length}: ${files[i].name}`;
+    const form = new FormData();
+    form.append("file", files[i]);
+    try{ await apiFetch(`/stations/${currentStationId}/jingles/upload`, { method: "POST", body: form }); }
+    catch(e){ console.error("Jingle upload failed for", files[i].name, e); }
+  }
+  el.textContent = `Uploaded ${files.length} jingle(s).`;
+  setTimeout(() => el.classList.add("hidden"), 2500);
+  loadStationDetail();
+}
+
+async function uploadBatch(files, path, progressElId){
+  const el = document.getElementById(progressElId);
+  el.classList.remove("hidden");
+  el.textContent = `Uploading ${files.length} file(s)...`;
+  const form = new FormData();
+  for(const f of files) form.append("files", f);
+  try{
+    const res = await apiFetch(path, { method: "POST", body: form });
+    const data = await res.json();
+    el.textContent = `Uploaded ${data.count} track(s). They're already queued to play.`;
+  }catch(e){
+    el.textContent = "Upload failed — check the console for details.";
+    console.error(e);
+  }
+  setTimeout(() => el.classList.add("hidden"), 3000);
+}
+
+function setupDropzone(dropId, onFiles){
+  const el = document.getElementById(dropId);
+  if(!el) return;
+  ["dragenter", "dragover"].forEach(evtName =>
+    el.addEventListener(evtName, e => { e.preventDefault(); e.stopPropagation(); el.classList.add("drag"); }));
+  ["dragleave", "drop"].forEach(evtName =>
+    el.addEventListener(evtName, e => { e.preventDefault(); e.stopPropagation(); el.classList.remove("drag"); }));
+  el.addEventListener("drop", e => {
+    if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
+      onFiles({ target: { files: e.dataTransfer.files, value: "" } });
+    }
+  });
+}
+setupDropzone("trackDrop", uploadTracks);
+setupDropzone("jingleDrop", uploadJingles);
+
+async function deleteTrack(id){
+  if(!confirm("Remove this track from the library?")) return;
+  await apiFetch(`/tracks/${id}`, { method: "DELETE" });
+  loadStationDetail();
+}
+
+async function deleteJingle(id){
+  if(!confirm("Remove this jingle?")) return;
+  await apiFetch(`/jingles/${id}`, { method: "DELETE" });
+  loadStationDetail();
+}
+
+async function playJingleNow(id){
+  await apiFetch(`/stations/${currentStationId}/jingles/${id}/play-now`, { method: "POST" });
+}
+
+async function updateJingleInterval(){
+  const val = parseInt(document.getElementById("jingleIntervalInput").value || "0", 10);
+  await apiFetch(`/stations/${currentStationId}/jingle-interval`, {
+    method: "PUT", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ interval_tracks: val })
+  });
+}
+
+async function loadGlobalSettings(){
+  const res = await apiFetch("/settings");
+  if(!res.ok) return;
+  const s = await res.json();
+  document.getElementById("gs_publicHostname").value = s.public_hostname || "";
+  document.getElementById("gs_icecastHost").value = s.icecast_internal_host || "";
+  document.getElementById("gs_icecastPort").value = s.icecast_port || "";
+  document.getElementById("gs_icecastAdminPass").value = s.icecast_admin_password || "";
+  document.getElementById("gs_icecastSourcePass").value = s.icecast_default_source_password || "";
+}
+
+async function saveGlobalSettings(){
+  const body = {
+    public_hostname: document.getElementById("gs_publicHostname").value.trim(),
+    icecast_internal_host: document.getElementById("gs_icecastHost").value.trim() || "localhost",
+    icecast_port: document.getElementById("gs_icecastPort").value.trim() || "8000",
+    icecast_admin_password: document.getElementById("gs_icecastAdminPass").value,
+    icecast_default_source_password: document.getElementById("gs_icecastSourcePass").value,
+  };
+  const hint = document.getElementById("globalSettingsHint");
+  const res = await apiFetch("/settings", {
+    method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)
+  });
+  if(!res.ok){
+    const err = await res.json();
+    hint.textContent = err.detail || "Failed to save.";
+    return;
+  }
+  hint.textContent = "Saved and regenerated icecast.xml.";
+  setTimeout(() => hint.textContent = "", 3000);
+}
+
+async function regenerateIcecastConfig(){
+  const hint = document.getElementById("globalSettingsHint");
+  const res = await apiFetch("/settings/regenerate-icecast-config", { method: "POST" });
+  hint.textContent = res.ok ? "Regenerated icecast.xml." : "Failed to regenerate.";
+  setTimeout(() => hint.textContent = "", 3000);
+}
+
+async function refreshUsers(){
+  const res = await apiFetch("/users");
+  if(!res.ok) return;
+  const users = await res.json();
+  document.getElementById("userTableBody").innerHTML = users.map(u => `
+    <tr>
+      <td>${escapeHtml(u.username)}</td>
+      <td>${u.is_admin ? "Admin" : "Member"}</td>
+      <td class="actions">
+        ${u.username === CURRENT_USER.username ? "" : `<button onclick="deleteUser(${u.id})">Remove</button>`}
+      </td>
+    </tr>
+  `).join("");
+}
+
+function openUserModal(){ document.getElementById("userOverlay").classList.add("show"); }
+function closeUserModal(){ document.getElementById("userOverlay").classList.remove("show"); }
+
+async function submitCreateUser(){
+  const body = {
+    username: document.getElementById("u_username").value.trim(),
+    password: document.getElementById("u_password").value,
+    is_admin: document.getElementById("u_isadmin").checked,
+  };
+  const res = await apiFetch("/users", {
+    method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if(!res.ok){ alert(data.detail || "Failed to create user"); return; }
+  closeUserModal();
+  document.getElementById("u_username").value = "";
+  document.getElementById("u_password").value = "";
+  document.getElementById("u_isadmin").checked = false;
+  refreshUsers();
+}
+
+async function deleteUser(id){
+  if(!confirm("Remove this user's access?")) return;
+  await apiFetch(`/users/${id}`, { method: "DELETE" });
+  refreshUsers();
+}
+
+bootstrap();
+setInterval(() => {
+  if(!document.getElementById("appRoot").classList.contains("hidden")){
+    if(!document.getElementById("viewStations").classList.contains("hidden")) refresh();
+    if(!document.getElementById("viewStationDetail").classList.contains("hidden")) loadStationDetail();
+  }
+}, 8000);
+</script>
+</body>
+</html>

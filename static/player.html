@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>leonCAST</title>
+<style>
+  :root{
+    --accent: #39ff6a;
+    --bg-0: #05070a;
+    --text-0: #eafff0;
+    --text-1: #9fc9ab;
+    --text-2: #5c7d64;
+    --acrylic: rgba(8, 14, 11, 0.62);
+    --stroke: rgba(57,255,106,0.18);
+    --font-ui: "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; height:100%; font-family: var(--font-ui); -webkit-font-smoothing: antialiased; }
+
+  #bg{
+    position:fixed; inset:0; z-index:-2;
+    background-color: var(--bg-0);
+    background-size: cover;
+    background-position: center;
+    transition: background-color .3s ease;
+  }
+  #bg::after{
+    content:""; position:absolute; inset:0;
+    background: radial-gradient(circle at 50% 30%, rgba(0,0,0,0.15), rgba(0,0,0,0.65) 80%);
+  }
+
+  .wrap{
+    min-height:100vh; width:100%;
+    display:flex; align-items:center; justify-content:center;
+    padding: 24px;
+  }
+
+  .card{
+    width: 400px; max-width: 100%;
+    background: var(--acrylic);
+    backdrop-filter: blur(28px) saturate(150%);
+    border: 1px solid var(--stroke);
+    border-radius: 16px;
+    padding: 30px 26px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+    color: var(--text-0);
+    text-align:center;
+  }
+
+  .mark{ margin: 0 auto 14px auto; display:block; filter: drop-shadow(0 0 16px rgba(57,255,106,0.28)); }
+
+  h1{ margin:0 0 2px 0; font-size:22px; font-weight:700; letter-spacing:-0.2px; word-break: break-word; }
+  .subtitle{ margin:0 0 20px 0; font-size:12.5px; color: var(--text-2); }
+
+  .status-pill{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:11px; font-weight:600; letter-spacing:0.3px; text-transform:uppercase;
+    padding: 4px 11px; border-radius: 20px; margin-bottom: 16px;
+  }
+  .status-pill.on{ background: rgba(57,255,106,0.14); color: var(--accent); }
+  .status-pill.off{ background: rgba(255,255,255,0.06); color: var(--text-2); }
+  .status-pill .blip{ width:6px; height:6px; border-radius:50%; background: currentColor; }
+  .status-pill.on .blip{ animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.35; } }
+
+  .now-playing{
+    background: rgba(0,0,0,0.28);
+    border: 1px solid var(--stroke);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 20px;
+    min-height: 48px;
+    display:flex; flex-direction:column; justify-content:center;
+  }
+  .now-playing .label{ font-size:10px; color: var(--text-2); text-transform:uppercase; letter-spacing:0.6px; margin-bottom:4px; }
+  .now-playing .track{ font-size:14px; }
+  .now-playing .artist{ color: var(--text-1); }
+  .now-playing .empty{ color: var(--text-2); font-size:13px; font-style:italic; }
+
+  audio{ width:100%; filter: invert(0.86) hue-rotate(80deg) brightness(1.05); border-radius: 8px; }
+
+  .powered{ margin-top:18px; font-size:11px; color: var(--text-2); }
+  .powered a{ color: var(--text-1); text-decoration:none; }
+  .powered a:hover{ color: var(--accent); }
+
+  .error-state{ color: var(--text-1); font-size:14px; }
+</style>
+</head>
+<body>
+
+<div id="bg"></div>
+
+<div class="wrap">
+  <div class="card" id="card">
+    <svg class="mark" viewBox="0 0 64 64" width="52" height="52" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="leonCAST">
+      <rect x="1.5" y="1.5" width="61" height="61" rx="15" fill="#0a140f" stroke="rgba(57,255,106,0.35)" stroke-width="1.5"/>
+      <path d="M17 21 C 34 21, 43 30, 43 43" fill="none" stroke="#39ff6a" stroke-width="3.4" stroke-linecap="round" opacity="0.35"/>
+      <path d="M17 30 C 29 30, 35 36, 35 43" fill="none" stroke="#39ff6a" stroke-width="3.4" stroke-linecap="round" opacity="0.65"/>
+      <circle cx="18.5" cy="43" r="5" fill="#39ff6a"/>
+    </svg>
+
+    <div id="loadingState">
+      <p class="error-state">Loading station...</p>
+    </div>
+
+    <div id="playerState" style="display:none;">
+      <h1 id="stationName">Station</h1>
+      <p class="subtitle">station control &middot; live radio</p>
+
+      <div class="status-pill" id="statusPill"><span class="blip"></span><span id="statusText">Offline</span></div>
+
+      <div class="now-playing">
+        <div class="label">Now playing</div>
+        <div id="nowPlayingBody"><div class="empty">Nothing queued</div></div>
+      </div>
+
+      <audio id="audioEl" controls preload="none"></audio>
+
+      <div class="powered">powered by <a href="/" target="_blank" rel="noopener">leonCAST</a></div>
+    </div>
+
+    <div id="errorState" style="display:none;">
+      <p class="error-state">This station doesn't exist or isn't available.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "/api";
+const stationId = decodeURIComponent(location.pathname.replace(/^\/listen\//, "").replace(/\/$/, ""));
+let lastStreamUrl = null;
+let lastRunning = null;
+
+function escapeHtml(str){
+  const d = document.createElement("div");
+  d.innerText = str == null ? "" : str;
+  return d.innerHTML;
+}
+
+async function loadStation(){
+  let data;
+  try{
+    const res = await fetch(`${API}/public/stations/${encodeURIComponent(stationId)}`);
+    if(!res.ok) throw new Error("not found");
+    data = await res.json();
+  }catch(e){
+    document.getElementById("loadingState").style.display = "none";
+    document.getElementById("errorState").style.display = "block";
+    return;
+  }
+
+  document.getElementById("loadingState").style.display = "none";
+  document.getElementById("playerState").style.display = "block";
+
+  document.getElementById("stationName").textContent = data.name;
+  document.title = `${data.name} — leonCAST`;
+
+  const bg = document.getElementById("bg");
+  bg.style.backgroundColor = data.background_color || "#05070a";
+  bg.style.backgroundImage = data.background_url ? `url("${data.background_url}")` : "none";
+
+  const pill = document.getElementById("statusPill");
+  const statusText = document.getElementById("statusText");
+  pill.className = `status-pill ${data.running ? "on" : "off"}`;
+  statusText.textContent = data.running ? "Live" : "Offline";
+
+  const npBody = document.getElementById("nowPlayingBody");
+  npBody.innerHTML = data.now_playing
+    ? `<div class="track">${escapeHtml(data.now_playing.title || "Untitled")} <span class="artist">— ${escapeHtml(data.now_playing.artist || "Unknown")}</span></div>`
+    : `<div class="empty">Nothing queued</div>`;
+
+  const audioEl = document.getElementById("audioEl");
+  if(data.stream_url !== lastStreamUrl){
+    lastStreamUrl = data.stream_url;
+    const wasPlaying = !audioEl.paused;
+    audioEl.src = data.stream_url;
+    if(wasPlaying) audioEl.play().catch(() => {});
+  }
+  lastRunning = data.running;
+}
+
+loadStation();
+setInterval(loadStation, 8000);
+</script>
+</body>
+</html>
